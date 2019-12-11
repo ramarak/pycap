@@ -179,7 +179,7 @@ class pycap():
 		
 
 def main(filter):
-	db_path = "/opt/geolite-2/GeoLite2-City.mmdb"
+	db_path = "/DATABASE/" #database path
 	filter = ""
 	try:
 		pycap_obj = pycap(sys.argv[1], db_path, filter, False)
