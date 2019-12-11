@@ -1,7 +1,6 @@
 
 import dpkt, socket, sys, geoip2.database
 from tkinter import *
-from pcapng import FileScanner
 
 class pycap():
 	def __init__(self, capture, db_path, filter, initialize_window):
