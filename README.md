@@ -1,6 +1,7 @@
 # pycap
 pycap allows you to read pcap files using python tkinter.
-You can filter the packets using the following filters
+
+Filters:
 - no = packet number
 - src = source IP
 - dst = destination IP
