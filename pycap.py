@@ -23,10 +23,9 @@ class pycap():
 			root = Tk()
 			root.geometry("1000x500")
 			root.title("pycap")
-			#root.resizable(width = False, height = False)
 			val = StringVar() # value of entry is stored here
 			
-			status_bar = "NO.          SOURCE                      DESTINATION                      LOCATION (src)                                 LOCATION (dst)                          PROTOCOL"
+			status_bar = "NO.          SOURCE                      DESTINATION                      LOCATION (src)                                 LOCATION (dst)                                PROTOCOL"
 			status = Label(root, text = status_bar, bd = 1, relief = FLAT, anchor = W)
 			status.pack(side = TOP, fill = X)
 			
@@ -88,6 +87,14 @@ class pycap():
 				
 				do_not_fragment = bool(ip.off & dpkt.ip.IP_DF)
 				more_fragments = bool(ip.off & dpkt.ip.IP_MF)
+				
+				if src_copy == this_ip: 
+					src_lookup = "[YOU]             "
+					src_loc_copy = "[YOU]"
+				
+				elif dst_copy == this_ip:
+					dst_lookup = "[YOU]             "
+					dst_loc_copy = "[YOU]"
 
 				this_dict["no"] = str(line)
 				this_dict["src"] = src_copy
@@ -101,6 +108,13 @@ class pycap():
 				this_dict["mf"] = more_fragments
 				this_dict["sport"] = ip.data.sport
 				this_dict["dport"] = ip.data.dport
+
+				tcp = ip.data
+				if tcp.dport == 80 and len(tcp.data) > 0:
+					http = dpkt.http.Request(tcp.data)
+					this_dict["http_uri"] = http.uri
+					this_dict["user_agent"] = http.headers['user-agent']
+					this_dict["http_method"] = http.method
 				
 				self.all_data.append(this_dict)
 
@@ -112,7 +126,7 @@ class pycap():
 					loops = 13 - len(dst)
 					for i in range(loops): dst += "  "
 				
-				if(len(src_lookup) < 9):
+				if(len(src_lookup) < 10):
 					loops = 9 - len(src_lookup)
 					for i in range(loops): src_lookup += "  "
 				
@@ -156,6 +170,7 @@ class pycap():
 							line +=1
 							arr.append(data_line)
 							break
+				print(line)
 
 
 			except: continue
@@ -208,6 +223,12 @@ class pycap():
 						info.append(dict.get("mf"))
 						info.append(dict.get("sport"))
 						info.append(dict.get("dport"))
+						try:
+							info.append(dict.get("http_uri"))
+							info.append(dict.get("user_method"))
+							info.append(dict.get("http_method"))
+						except: pass
+
 						break
 					
 					else:
@@ -242,20 +263,36 @@ class new_window(pycap):
 		ts_label = Label(self.master, text = ("Timestamp: " + str(self.info[0])))
 		ts_label.place(x = 15, y = 20)
 
-		ttl_label = Label(self.master, text = ("Time to live: " + str(self.info[1])) )
+		ttl_label = Label(self.master, text = ("Time to live: " + str(self.info[1])))
 		ttl_label.place(x = 15, y = 45)
 
-		df_label = Label(self.master, text = ("DF flag: " + str(self.info[2])) )
+		df_label = Label(self.master, text = ("DF flag: " + str(self.info[2])))
 		df_label.place(x = 15, y = 70)
 
-		mf_label =  Label(self.master, text = ("MF flag: " + str(self.info[3])) )
+		mf_label =  Label(self.master, text = ("MF flag: " + str(self.info[3])))
 		mf_label.place(x = 15, y = 95)
 
-		sport_label =  Label(self.master, text = ("Source port: " + str(self.info[4])) )
+		sport_label =  Label(self.master, text = ("Source port: " + str(self.info[4])))
 		sport_label.place(x = 15, y = 120)
 
-		mf_label =  Label(self.master, text = ("Destination port: " + str(self.info[5])) )
+		mf_label =  Label(self.master, text = ("Destination port: " + str(self.info[5])))
 		mf_label.place(x = 15, y = 145)
+
+		try:
+
+			http_title = Label(self.master, text = "HTTP:")
+			http_title.place(x = 15, y = 200)
+
+			method_label = Label(self.master, text = ("- Method: " + str(self.info[8])))
+			method_label.place(x = 30, y = 225)
+
+			agent_label = Label(self.master, text = ("- User agent: " + str(self.info[7])))
+			agent_label.place(x = 30, y = 250)
+
+			uri_label = Label(self.master, text = ("- URI: " + str(self.info[6])))
+			uri_label.place(x = 30, y = 275)
+
+		except: pass
 
 
 def main(filter):
