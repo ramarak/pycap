@@ -1,13 +1,19 @@
 
-import dpkt, socket, sys, geoip2.database
+import dpkt, socket, sys, geoip2.database, datetime
 from tkinter import *
+from dpkt.compat import compat_ord
+
+global tracker
+tracker = []
 
 class pycap():
-	def __init__(self, capture, db_path, filter, initialize_window):
+	def __init__(self, capture, db_path, filter, initialize_window, all_data):
 		self.capture = capture
 		self.db_path = db_path
 		self.filter = filter
 		self.initialize_window = initialize_window
+		self.all_data = all_data
+
 		self.init_window(capture, db_path, filter)
 	
 	def init_window(self, capture, db_path, filter):
@@ -55,16 +61,17 @@ class pycap():
 		f = open(capture)
 		pcap = dpkt.pcap.Reader(f)
 		for line in self.pcap_reader(pcap, filter): listbox.insert(END, line)
-		
+
 		root.mainloop()
 	
 	def pcap_reader(self, cap, filter):
-		global arr
 		arr = []
+
 		line = 100
 		this_ip = socket.gethostbyname(socket.gethostname())
 
 		for (ts, buf) in cap:
+			this_dict = {}
 			try:
 				eth = dpkt.ethernet.Ethernet(buf)
 				ip = eth.data
@@ -78,9 +85,24 @@ class pycap():
 				dst_lookup = self.ip_lookup(dst)
 				src_loc_copy = src_lookup
 				dst_loc_copy = dst_lookup
+				
+				do_not_fragment = bool(ip.off & dpkt.ip.IP_DF)
+				more_fragments = bool(ip.off & dpkt.ip.IP_MF)
 
-				#if src == this_ip: src_lookup = "[YOU]"	
-				#elif dst == this_ip: dst_lookup = "[YOU]"
+				this_dict["no"] = str(line)
+				this_dict["src"] = src_copy
+				this_dict["dst"] = dst_copy
+				this_dict["src_lookup"] = src_loc_copy
+				this_dict["dst_lookup"] = dst_loc_copy
+				this_dict["protocol"] = protocol
+				this_dict["ts"] = str(datetime.datetime.utcfromtimestamp(ts))
+				this_dict["ttl"] = str(ip.ttl)
+				this_dict["df"] = do_not_fragment
+				this_dict["mf"] = more_fragments
+				this_dict["sport"] = ip.data.sport
+				this_dict["dport"] = ip.data.dport
+				
+				self.all_data.append(this_dict)
 
 				if(len(src) < 13):
 					loops = 13 - len(src)
@@ -136,7 +158,7 @@ class pycap():
 							break
 
 
-			except: pass
+			except: continue
 		
 		return arr
 	
@@ -170,22 +192,81 @@ class pycap():
 	def more_info(self, val):
 		try:
 			selection = listbox.curselection()
-			pos = list(selection)[0] + 100
-			print(pos)
+			pos = str(list(selection)[0] + 100)
+			title = ("packet number " + str(pos))
+
+			if pos not in tracker:
+				win = Toplevel()
+				tracker.append(pos)
+				info = []
+
+				for dict in self.all_data:
+					if dict.get("no") == pos:
+						info.append(dict.get("ts"))
+						info.append(dict.get("ttl"))
+						info.append(dict.get("df"))
+						info.append(dict.get("mf"))
+						info.append(dict.get("sport"))
+						info.append(dict.get("dport"))
+						break
+					
+					else:
+						continue
+				more_info = new_window(win, title, "400x500", pos, info)
 
 		except: pass
-		
-		
-		
+	
+
+class new_window(pycap):
+	def __init__(self, master, title, geometry, pos, info):
+		self.master = master
+		self.title = title
+		self.geometry = geometry
+		self.pos = pos
+		self.info = info
+
+		self.master.title(self.title)
+		self.master.geometry(self.geometry)
+		self.master.resizable(width = False, height = False)
+		self.master.protocol("WM_DELETE_WINDOW",  self.__close__)
+
+		self.display_info()
+
+		self.master.mainloop()
+
+	def __close__(self):
+		tracker.remove(self.pos)
+		self.master.destroy()
+	
+	def display_info(self):
+		ts_label = Label(self.master, text = ("Timestamp: " + str(self.info[0])))
+		ts_label.place(x = 15, y = 20)
+
+		ttl_label = Label(self.master, text = ("Time to live: " + str(self.info[1])) )
+		ttl_label.place(x = 15, y = 45)
+
+		df_label = Label(self.master, text = ("DF flag: " + str(self.info[2])) )
+		df_label.place(x = 15, y = 70)
+
+		mf_label =  Label(self.master, text = ("MF flag: " + str(self.info[3])) )
+		mf_label.place(x = 15, y = 95)
+
+		sport_label =  Label(self.master, text = ("Source port: " + str(self.info[4])) )
+		sport_label.place(x = 15, y = 120)
+
+		mf_label =  Label(self.master, text = ("Destination port: " + str(self.info[5])) )
+		mf_label.place(x = 15, y = 145)
+
 
 def main(filter):
-	db_path = "/DATABASE/" #database path
+	db_path = "/opt/geolite-2/GeoLite2-City.mmdb"
 	filter = ""
 	try:
-		pycap_obj = pycap(sys.argv[1], db_path, filter, False)
+		pycap_obj = pycap(sys.argv[1], db_path, filter, False, [])
 
 	except Exception as err:
 		print("[+] {}").format(err)
 		sys.exit()
 
-main(filter)
+if __name__ == "__main__":
+	main(filter)
