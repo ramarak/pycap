@@ -59,14 +59,13 @@ class pycap():
 		else: pass
 		f = open(capture)
 		pcap = dpkt.pcap.Reader(f)
-		for line in self.pcap_reader(pcap, filter): listbox.insert(END, line)
+		for line in self.pcap_reader(pcap, filter, 100): listbox.insert(END, line)
 
 		root.mainloop()
 	
-	def pcap_reader(self, cap, filter):
+	def pcap_reader(self, cap, filter, line):
 		arr = []
 
-		line = 100
 		this_ip = socket.gethostbyname(socket.gethostname())
 
 		for (ts, buf) in cap:
@@ -106,8 +105,8 @@ class pycap():
 				this_dict["ttl"] = str(ip.ttl)
 				this_dict["df"] = do_not_fragment
 				this_dict["mf"] = more_fragments
-				this_dict["sport"] = ip.data.sport
-				this_dict["dport"] = ip.data.dport
+				this_dict["sport"] = str(ip.data.sport)
+				this_dict["dport"] = str(ip.data.dport)
 
 				tcp = ip.data
 				if tcp.dport == 80 and len(tcp.data) > 0:
@@ -137,9 +136,9 @@ class pycap():
 				data_line = ("{}.       {}           {}                         {}                                       {}                                  {}").format(line, src, dst, src_lookup, dst_lookup, protocol)
 
 				if len(filter) == 0:
-					line +=1
+					
 					arr.append(data_line)
-				
+					line +=1
 				
 				else:
 					for f in filter:
@@ -147,31 +146,37 @@ class pycap():
 						target = fv2[0]
 						val = fv2[1]
 						if target == "no" and int(val) == line:
-							line +=1
+							
 							arr.append(data_line)
+							line +=1
 							break
 						elif target == "src" and val == src_copy:
-							line +=1
+							
 							arr.append(data_line)
+							line +=1
 							break
 						elif target == "dst" and val == dst_copy:
-							line +=1
+							
 							arr.append(data_line)
+							line +=1
 							break
-						elif target == "src_loc" and val == src_lookup:
-							line +=1
+						elif target == "src_loc" and val == src_loc_copy:
+							
 							arr.append(data_line)
+							line +=1
 							break
-						elif target == "dst_loc" and val == dst_lookup:
-							line +=1
+						elif target == "dst_loc" and val == dst_loc_copy:
+							
 							arr.append(data_line)
+							line +=1
 							break
 						elif target == "proto" and val == protocol:
-							line +=1
+							
 							arr.append(data_line)
+							line +=1
 							break
-				print(line)
-
+						line += 1
+							
 
 			except: continue
 		
@@ -278,8 +283,7 @@ class new_window(pycap):
 		mf_label =  Label(self.master, text = ("Destination port: " + str(self.info[5])))
 		mf_label.place(x = 15, y = 145)
 
-		try:
-
+		if self.info[5] == "80":
 			http_title = Label(self.master, text = "HTTP:")
 			http_title.place(x = 15, y = 200)
 
@@ -291,9 +295,6 @@ class new_window(pycap):
 
 			uri_label = Label(self.master, text = ("- URI: " + str(self.info[6])))
 			uri_label.place(x = 30, y = 275)
-
-		except: pass
-
 
 def main(filter):
 	db_path = "/opt/geolite-2/GeoLite2-City.mmdb"
