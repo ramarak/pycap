@@ -10,6 +10,7 @@ Filters:
 - proto = protocol
 
 Filters can be combined together using a "," to separate them. Example, src_loc=[Dallas],proto=TCP
+Double-clicking on a packet will display more information about it
 
 # requirements
 You will need to download the GeoLite2 City database and geoip2 library.
