@@ -1,4 +1,3 @@
-
 import dpkt, socket, sys, geoip2.database, datetime
 from tkinter import *
 from dpkt.compat import compat_ord
