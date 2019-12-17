@@ -1,6 +1,6 @@
+
 import dpkt, socket, sys, geoip2.database, datetime
 from tkinter import *
-from dpkt.compat import compat_ord
 
 global tracker
 tracker = []
@@ -17,14 +17,14 @@ class pycap():
 	
 	def init_window(self, capture, db_path, filter):
 		global root
-		if self.initialize_window == False:
+		if self.initialize_window is False:
 			self.initialize_window = True
 			root = Tk()
 			root.geometry("1000x500")
 			root.title("pycap")
 			val = StringVar() # value of entry is stored here
 			
-			status_bar = "NO.          SOURCE                      DESTINATION                      LOCATION (src)                                 LOCATION (dst)                                PROTOCOL"
+			status_bar = "NO.          SOURCE                      DESTINATION                      LOCATION (src)                                 LOCATION (dst)                                "
 			status = Label(root, text = status_bar, bd = 1, relief = FLAT, anchor = W)
 			status.pack(side = TOP, fill = X)
 			
@@ -78,34 +78,45 @@ class pycap():
 
 				src_copy = src
 				dst_copy = dst
+
 				src_lookup = self.ip_lookup(src)
 				dst_lookup = self.ip_lookup(dst)
+
 				src_loc_copy = src_lookup
 				dst_loc_copy = dst_lookup
+
+				sport = ip.data.sport
+				dport = ip.data.dport
 				
 				do_not_fragment = bool(ip.off & dpkt.ip.IP_DF)
 				more_fragments = bool(ip.off & dpkt.ip.IP_MF)
 				
 				if src_copy == this_ip: 
-					src_lookup = "[YOU]             "
+					src_lookup = "[YOU]         "
 					src_loc_copy = "[YOU]"
 				
 				elif dst_copy == this_ip:
-					dst_lookup = "[YOU]             "
+					dst_lookup = "[YOU]         "
 					dst_loc_copy = "[YOU]"
 
 				this_dict["no"] = str(line)
+
 				this_dict["src"] = src_copy
 				this_dict["dst"] = dst_copy
+
 				this_dict["src_lookup"] = src_loc_copy
 				this_dict["dst_lookup"] = dst_loc_copy
+
 				this_dict["protocol"] = protocol
+
 				this_dict["ts"] = str(datetime.datetime.utcfromtimestamp(ts))
 				this_dict["ttl"] = str(ip.ttl)
+
 				this_dict["df"] = do_not_fragment
 				this_dict["mf"] = more_fragments
-				this_dict["sport"] = str(ip.data.sport)
-				this_dict["dport"] = str(ip.data.dport)
+
+				this_dict["sport"] = str(sport)
+				this_dict["dport"] = str(dport)
 
 				tcp = ip.data
 				if tcp.dport == 80 and len(tcp.data) > 0:
@@ -132,7 +143,7 @@ class pycap():
 					loops = 9 - len(dst_lookup)
 					for i in range(loops): dst_lookup += "  "
 				data_line = ""
-				data_line = ("{}.       {}           {}                         {}                                       {}                                  {}").format(line, src, dst, src_lookup, dst_lookup, protocol)
+				data_line = ("{}.       {}           {}                         {}                                       {}                                  ").format(line, src, dst, src_lookup, dst_lookup)
 
 				if len(filter) == 0:
 					
@@ -144,37 +155,35 @@ class pycap():
 						fv2 = f.split("=")
 						target = fv2[0]
 						val = fv2[1]
+						#print("target: {}. val: {}").format(target, val)
+						#print("sport: {}, dport: {}").format(sport, dport)
 						if target == "no" and int(val) == line:
-							
-							arr.append(data_line)
 							line +=1
+							arr.append(data_line)
 							break
 						elif target == "src" and val == src_copy:
-							
-							arr.append(data_line)
 							line +=1
+							arr.append(data_line)
 							break
 						elif target == "dst" and val == dst_copy:
-							
-							arr.append(data_line)
 							line +=1
+							arr.append(data_line)
 							break
 						elif target == "src_loc" and val == src_loc_copy:
-							
-							arr.append(data_line)
 							line +=1
+							arr.append(data_line)
 							break
 						elif target == "dst_loc" and val == dst_loc_copy:
-							
-							arr.append(data_line)
 							line +=1
+							arr.append(data_line)
 							break
 						elif target == "proto" and val == protocol:
-							
-							arr.append(data_line)
 							line +=1
+							arr.append(data_line)
 							break
-						line += 1
+
+						else:
+							line += 1
 							
 
 			except: continue
@@ -221,12 +230,14 @@ class pycap():
 
 				for dict in self.all_data:
 					if dict.get("no") == pos:
+						info.append(dict.get("protocol"))
 						info.append(dict.get("ts"))
 						info.append(dict.get("ttl"))
 						info.append(dict.get("df"))
 						info.append(dict.get("mf"))
 						info.append(dict.get("sport"))
 						info.append(dict.get("dport"))
+				
 						try:
 							info.append(dict.get("http_uri"))
 							info.append(dict.get("user_method"))
@@ -264,35 +275,38 @@ class new_window(pycap):
 		self.master.destroy()
 	
 	def display_info(self):
-		ts_label = Label(self.master, text = ("Timestamp: " + str(self.info[0])))
+		ts_label = Label(self.master, text = ("Timestamp: " + str(self.info[1])))
 		ts_label.place(x = 15, y = 20)
 
-		ttl_label = Label(self.master, text = ("Time to live: " + str(self.info[1])))
+		ttl_label = Label(self.master, text = ("Time to live: " + str(self.info[2])))
 		ttl_label.place(x = 15, y = 45)
 
-		df_label = Label(self.master, text = ("DF flag: " + str(self.info[2])))
+		df_label = Label(self.master, text = ("DF flag: " + str(self.info[3])))
 		df_label.place(x = 15, y = 70)
 
-		mf_label =  Label(self.master, text = ("MF flag: " + str(self.info[3])))
+		mf_label =  Label(self.master, text = ("MF flag: " + str(self.info[4])))
 		mf_label.place(x = 15, y = 95)
 
-		sport_label =  Label(self.master, text = ("Source port: " + str(self.info[4])))
+		sport_label =  Label(self.master, text = ("Source port: " + str(self.info[5])))
 		sport_label.place(x = 15, y = 120)
 
-		mf_label =  Label(self.master, text = ("Destination port: " + str(self.info[5])))
+		mf_label =  Label(self.master, text = ("Destination port: " + str(self.info[6])))
 		mf_label.place(x = 15, y = 145)
+
+		proto_label =  Label(self.master, text = ("Protocol: " + str(self.info[0])))
+		proto_label.place(x = 15, y = 170)
 
 		if self.info[5] == "80":
 			http_title = Label(self.master, text = "HTTP:")
 			http_title.place(x = 15, y = 200)
 
-			method_label = Label(self.master, text = ("- Method: " + str(self.info[8])))
+			method_label = Label(self.master, text = ("- Method: " + str(self.info[9])))
 			method_label.place(x = 30, y = 225)
 
-			agent_label = Label(self.master, text = ("- User agent: " + str(self.info[7])))
+			agent_label = Label(self.master, text = ("- User agent: " + str(self.info[8])))
 			agent_label.place(x = 30, y = 250)
 
-			uri_label = Label(self.master, text = ("- URI: " + str(self.info[6])))
+			uri_label = Label(self.master, text = ("- URI: " + str(self.info[7])))
 			uri_label.place(x = 30, y = 275)
 
 def main(filter):
