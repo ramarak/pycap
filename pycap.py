@@ -310,7 +310,7 @@ class new_window(pycap):
 			uri_label.place(x = 30, y = 275)
 
 def main(filter):
-	db_path = "/opt/geolite-2/GeoLite2-City.mmdb"
+	db_path = "/opt/geolite-2/GeoLite2-City.mmdb" #add path to the geolite database
 	filter = ""
 	try:
 		pycap_obj = pycap(sys.argv[1], db_path, filter, False, [])
