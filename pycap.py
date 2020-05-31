@@ -316,7 +316,7 @@ def main(filter):
 		pycap_obj = pycap(sys.argv[1], db_path, filter, False, [])
 
 	except Exception as err:
-		print("[+] {}").format(err)
+		print("[+] {}".format(err))
 		sys.exit()
 
 if __name__ == "__main__":
